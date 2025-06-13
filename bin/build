@@ -597,50 +597,6 @@ mkdir -p $BUILD_DIR/.profile.d
 cat > $BUILD_DIR/.profile.d/000-parse-database-url.sh << 'EOF'
 #!/bin/bash
 
-if [ -n "$DATABASE_URL" ]; then
-  # Extract DB connection info from the DATABASE_URL
-  if [[ "$DATABASE_URL" == postgres://* || "$DATABASE_URL" == mysql://* ]]; then
-    SCHEMA=$(echo "$DATABASE_URL" | sed -E 's|://.*$||')
-
-    if [ "$SCHEMA" = "postgres" ]; then
-      DB_ENGINE_NAME="PostgreSQL"
-      DB_CONNECTION="pgsql"
-      DEFAULT_PORT=5432
-    elif [ "$SCHEMA" = "mysql" ]; then
-      DB_ENGINE_NAME="MySQL"
-      DB_CONNECTION="mysql"
-      DEFAULT_PORT=3306
-    else
-      DB_ENGINE_NAME="$SCHEMA"
-      DB_CONNECTION="mysql"
-      DEFAULT_PORT=3306
-    fi
-
-    # Parse the DATABASE_URL
-        DB_URL=$(echo $DATABASE_URL | sed -E 's/^(postgres|mysql):\/\///')
-        DB_USER=$(echo $DB_URL | sed -e 's/:.*$//')
-        DB_PASSWORD=$(echo $DB_URL | sed -e 's/^[^:]*://' -e 's/@.*$//')
-        DB_HOST_PORT=$(echo $DB_URL | sed -e 's/^[^@]*@//' -e 's/\/.*//')
-        DB_HOST=$(echo $DB_HOST_PORT | sed -e 's/:.*$//')
-        DB_PORT=$(echo $DB_HOST_PORT | grep ":" | sed -e 's/^[^:]*://')
-        DB_DATABASE=$(echo $DB_URL | sed -e 's/^.*\///')
-        DB_PORT=${DB_PORT:-$DEFAULT_PORT}
-
-    # Set these in the .env file
-    sed -i "s/DB_CONNECTION=.*/DB_CONNECTION=${DB_CONNECTION}/" .env
-    sed -i "s/DB_HOST=.*/DB_HOST=$DB_HOST/" .env
-    sed -i "s/DB_PORT=.*/DB_PORT=${DB_PORT:-$DEFAULT_PORT}/" .env
-    sed -i "s/DB_DATABASE=.*/DB_DATABASE=$DB_DATABASE/" .env
-    sed -i "s/DB_USERNAME=.*/DB_USERNAME=$DB_USER/" .env
-    sed -i "s/DB_PASSWORD=.*/DB_PASSWORD=$DB_PASSWORD/" .env
-
-    echo "$DB_ENGINE_NAME connection configured from DATABASE_URL"
-  fi
-fi
-EOF
-
-chmod +x $BUILD_DIR/.profile.d/000-parse-database-url.sh
-
 # Add this to your build script
 echo "-----> Creating post-deploy setup script"
 mkdir -p $BUILD_DIR/.profile.d
