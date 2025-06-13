@@ -69,6 +69,18 @@ return [
             'prefix' => '',
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
         ],
+        'mysql' => [
+            'driver' => 'mysql',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '3306'),
+            'database' => env('DB_DATABASE', 'forge'),
+            'username' => env('DB_USERNAME', 'forge'),
+            'password' => env('DB_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
     ],
 ];
 EOF
@@ -143,7 +155,7 @@ chmod +x $BUILD_DIR/.profile.d/php.sh
 # Set up environment
 echo "-----> Setting up DreamFactory environment"
 if [ -f "$BUILD_DIR/artisan" ]; then
-  php "$BUILD_DIR/artisan" df:env --db_connection=sqlite --df_install=Heroku || echo "Warning: df:env command failed, continuing with setup"
+  php "$BUILD_DIR/artisan" df:env --db_connection=mysql --df_install=Heroku || echo "Warning: df:env command failed, continuing with setup"
   php "$BUILD_DIR/artisan" key:generate --force || echo "Warning: key:generate command failed, continuing with setup"
   
   # Touch sqlite database file
@@ -156,7 +168,7 @@ else
   if [ ! -f "$BUILD_DIR/.env" ]; then
     echo "APP_ENV=production" > "$BUILD_DIR/.env"
     echo "APP_DEBUG=true" >> "$BUILD_DIR/.env"
-    echo "DB_CONNECTION=sqlite" >> "$BUILD_DIR/.env"
+    echo "DB_CONNECTION=mysql" >> "$BUILD_DIR/.env"
     echo "DB_DATABASE=/app/storage/databases/database.sqlite" >> "$BUILD_DIR/.env"
     # Generate app key
     APP_KEY=$(openssl rand -base64 32)
@@ -440,6 +452,7 @@ cat > $BUILD_DIR/start.sh << 'EOF'
 # Setup database environment
 echo "-----> Setup database environment"
 #!/bin/bash
+cd /app
 
 DEFAULT_PORT=3306
 
@@ -452,9 +465,6 @@ sed -i "s/^DB_PORT=.*/DB_PORT=$(escape_sed "${DB_PORT:-$DEFAULT_PORT}")/" .env
 sed -i "s/^DB_DATABASE=.*/DB_DATABASE=$(escape_sed "$DB_DATABASE")/" .env
 sed -i "s/^DB_USERNAME=.*/DB_USERNAME=$(escape_sed "$DB_USER")/" .env
 sed -i "s/^DB_PASSWORD=.*/DB_PASSWORD=$(escape_sed "$DB_PASSWORD")/" .env
-
-
-cd /app
 
 # Ensure storage directories exist and have proper permissions
 echo "Checking storage directories..."
@@ -618,6 +628,18 @@ sleep 5
 
 # Run migrations
 cd /app
+
+DEFAULT_PORT=3306
+
+escape_sed() {
+  echo "$1" | sed -e 's/[\/&]/\\&/g'
+}
+sed -i "s/^DB_CONNECTION=.*/DB_CONNECTION=$(escape_sed "${DB_CONNECTION:-mysql}")/" .env
+sed -i "s/^DB_HOST=.*/DB_HOST=$(escape_sed "$DB_HOST")/" .env
+sed -i "s/^DB_PORT=.*/DB_PORT=$(escape_sed "${DB_PORT:-$DEFAULT_PORT}")/" .env
+sed -i "s/^DB_DATABASE=.*/DB_DATABASE=$(escape_sed "$DB_DATABASE")/" .env
+sed -i "s/^DB_USERNAME=.*/DB_USERNAME=$(escape_sed "$DB_USER")/" .env
+sed -i "s/^DB_PASSWORD=.*/DB_PASSWORD=$(escape_sed "$DB_PASSWORD")/" .env
 php artisan migrate --force
 
 # Create storage directories with proper permissions
