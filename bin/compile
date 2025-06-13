@@ -415,48 +415,18 @@ EOF
 echo "-----> Creating start script"
 cat > $BUILD_DIR/start.sh << 'EOF'
 #!/bin/bash
-if [[ "$JAWSDB_URL" == postgres://* || "$JAWSDB_URL" == mysql://* ]]; then
-  SCHEMA=$(echo "$JAWSDB_URL" | sed -E 's|://.*$||')
 
-  if [ "$SCHEMA" = "postgres" ]; then
-    DB_ENGINE_NAME="PostgreSQL"
-  elif [ "$SCHEMA" = "mysql" ]; then
-    DB_ENGINE_NAME="MySQL"
-  else
-    DB_ENGINE_NAME="$SCHEMA"
-  fi
+DEFAULT_PORT=3306
 
-  echo "-----> Configuring $DB_ENGINE_NAME connection"
-  # Extract connection details from DATABASE_URL if available
-  if [ -n "$JAWSDB_URL" ]; then
-    # Parse the JAWSDB_URL to extract components
-    DB_URL=$(echo $JAWSDB_URL | sed -E 's/^(postgres|mysql):\/\///')
-    DB_USER=$(echo $DB_URL | sed -e 's/:.*$//')
-    DB_PASSWORD=$(echo $DB_URL | sed -e 's/^[^:]*://' -e 's/@.*$//')
-    DB_HOST_PORT=$(echo $DB_URL | sed -e 's/^[^@]*@//' -e 's/\/.*//')
-    DB_HOST=$(echo $DB_HOST_PORT | sed -e 's/:.*$//')
-    DB_PORT=$(echo $DB_HOST_PORT | grep ":" | sed -e 's/^[^:]*://')
-    DB_DATABASE=$(echo $DB_URL | sed -e 's/^.*\///')
-
-    if [ "$SCHEMA" = "postgres" ]; then
-      DB_CONNECTION=pgsql
-      DEFAULT_PORT=5432
-    elif [ "$SCHEMA" = "mysql" ]; then
-      DB_CONNECTION=mysql
-      DEFAULT_PORT=3306
-    else
-      DEFAULT_PORT=3306
-    fi
-
-    # Set environment variables
-    sed -i "s/DB_CONNECTION=.*/DB_CONNECTION=${DB_CONNECTION}/" .env
-    sed -i "s/DB_HOST=.*/DB_HOST=$DB_HOST/" .env
-    sed -i "s/DB_PORT=.*/DB_PORT=${DB_PORT:-$DEFAULT_PORT}/" .env
-    sed -i "s/DB_DATABASE=.*/DB_DATABASE=$DB_DATABASE/" .env
-    sed -i "s/DB_USERNAME=.*/DB_USERNAME=$DB_USER/" .env
-    sed -i "s/DB_PASSWORD=.*/DB_PASSWORD=$DB_PASSWORD/" .env
-  fi
-fi
+escape_sed() {
+  echo "$1" | sed -e 's/[\/&]/\\&/g'
+}
+sed -i "s/^DB_CONNECTION=.*/DB_CONNECTION=$(escape_sed "${DB_CONNECTION:-mysql}")/" .env
+sed -i "s/^DB_HOST=.*/DB_HOST=$(escape_sed "$DB_HOST")/" .env
+sed -i "s/^DB_PORT=.*/DB_PORT=$(escape_sed "${DB_PORT:-$DEFAULT_PORT}")/" .env
+sed -i "s/^DB_DATABASE=.*/DB_DATABASE=$(escape_sed "$DB_DATABASE")/" .env
+sed -i "s/^DB_USERNAME=.*/DB_USERNAME=$(escape_sed "$DB_USER")/" .env
+sed -i "s/^DB_PASSWORD=.*/DB_PASSWORD=$(escape_sed "$DB_PASSWORD")/" .env
 
 cd /app
 php artisan migrate --force
