@@ -367,10 +367,10 @@ pm.min_spare_servers = 1
 pm.max_spare_servers = 3
 EOF
 
-# Create script to set the database
-cat > $BUILD_DIR/.profile.d/000-parse-database-url.sh << 'EOF'
+# Create start script
+echo "-----> Creating start script"
+cat > $BUILD_DIR/start.sh << 'EOF'
 #!/bin/bash
-
 if [ -n "$DATABASE_URL" ]; then
   # Extract DB connection info from the DATABASE_URL
   if [[ "$DATABASE_URL" == postgres://* || "$DATABASE_URL" == mysql://* ]]; then
@@ -411,14 +411,7 @@ if [ -n "$DATABASE_URL" ]; then
     echo "$DB_ENGINE_NAME connection configured from DATABASE_URL"
   fi
 fi
-EOF
 
-chmod +x $BUILD_DIR/.profile.d/000-parse-database-url.sh
-
-# Create start script
-echo "-----> Creating start script"
-cat > $BUILD_DIR/start.sh << 'EOF'
-#!/bin/bash
 cd /app
 php artisan migrate --force
 
