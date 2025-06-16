@@ -155,9 +155,9 @@ chmod +x $BUILD_DIR/.profile.d/php.sh
 # Set up environment
 echo "-----> Setting up DreamFactory environment"
 if [ -f "$BUILD_DIR/artisan" ]; then
-  php "$BUILD_DIR/artisan" df:env --db_connection=mysql --df_install=Heroku || echo "Warning: df:env command failed, continuing with setup"
+  php "$BUILD_DIR/artisan" df:env --db_connection=sqlite --df_install=Heroku || echo "Warning: df:env command failed, continuing with setup"
   php "$BUILD_DIR/artisan" key:generate --force || echo "Warning: key:generate command failed, continuing with setup"
-  
+
   # Touch sqlite database file
   mkdir -p "$BUILD_DIR/storage/databases"
   touch "$BUILD_DIR/storage/databases/database.sqlite"
@@ -168,12 +168,12 @@ else
   if [ ! -f "$BUILD_DIR/.env" ]; then
     echo "APP_ENV=production" > "$BUILD_DIR/.env"
     echo "APP_DEBUG=true" >> "$BUILD_DIR/.env"
-    echo "DB_CONNECTION=mysql" >> "$BUILD_DIR/.env"
+    echo "DB_CONNECTION=sqlite" >> "$BUILD_DIR/.env"
     echo "DB_DATABASE=/app/storage/databases/database.sqlite" >> "$BUILD_DIR/.env"
     # Generate app key
     APP_KEY=$(openssl rand -base64 32)
     echo "APP_KEY=base64:$APP_KEY" >> "$BUILD_DIR/.env"
-    
+
     # Create the sqlite database directory
     mkdir -p "$BUILD_DIR/storage/databases"
     touch "$BUILD_DIR/storage/databases/database.sqlite"
@@ -337,10 +337,10 @@ http {
   default_type application/octet-stream;
   server_tokens off;
   client_max_body_size 100m;
-  
+
   # Rate limiting zone definition
   limit_req_zone $binary_remote_addr zone=mylimit:10m rate=1r/s;
-  
+
   server {
     listen $PORT default_server;
     server_name _;
@@ -349,7 +349,7 @@ http {
     index index.php index.html index.htm;
     add_header X-Frame-Options "SAMEORIGIN";
     add_header X-XSS-Protection "1; mode=block";
-    
+
     gzip on;
     gzip_disable "msie6";
     gzip_vary on;
@@ -369,7 +369,7 @@ http {
     location = /50x.html {
       root /usr/share/nginx/html;
     }
-    
+
     location ~ \.php$ {
       try_files $uri rewrite ^ /index.php?$query_string;
       fastcgi_split_path_info ^(.+\.php)(/.+)$;
@@ -378,15 +378,15 @@ http {
       fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
       include /app/nginx/fastcgi_params;
     }
-    
+
     location ~ /\.ht {
       deny all;
     }
-    
+
     location ~ /web.config {
       deny all;
     }
-    
+
     #By default we will limit login calls here using the limit_req_zone set above. The below will allow 1 per second over
     # 5 seconds (so 5 in 5 seconds)from a single IP before returning a 429 too many requests. Adjust as needed.
     location /api/v2/user/session {
@@ -394,7 +394,7 @@ http {
       limit_req zone=mylimit burst=5 nodelay;
       limit_req_status 429;
     }
-    
+
     location /api/v2/system/admin/session {
       try_files $uri $uri/ /index.php?$args;
       limit_req zone=mylimit burst=5 nodelay;
@@ -428,43 +428,11 @@ pm.min_spare_servers = 1
 pm.max_spare_servers = 3
 EOF
 
-# Setup database environment
-echo "-----> Setup database environment"
-#!/bin/bash
-
-DEFAULT_PORT=3306
-
-escape_sed() {
-  echo "$1" | sed -e 's/[\/&]/\\&/g'
-}
-sed -i "s/^DB_CONNECTION=.*/DB_CONNECTION=$(escape_sed "${DB_CONNECTION:-mysql}")/" .env
-sed -i "s/^DB_HOST=.*/DB_HOST=$(escape_sed "$DB_HOST")/" .env
-sed -i "s/^DB_PORT=.*/DB_PORT=$(escape_sed "${DB_PORT:-$DEFAULT_PORT}")/" .env
-sed -i "s/^DB_DATABASE=.*/DB_DATABASE=$(escape_sed "$DB_DATABASE")/" .env
-sed -i "s/^DB_USERNAME=.*/DB_USERNAME=$(escape_sed "$DB_USER")/" .env
-sed -i "s/^DB_PASSWORD=.*/DB_PASSWORD=$(escape_sed "$DB_PASSWORD")/" .env
-
-
 # Create start script
 echo "-----> Creating start script"
 cat > $BUILD_DIR/start.sh << 'EOF'
 #!/bin/bash
-# Setup database environment
-echo "-----> Setup database environment"
-#!/bin/bash
 cd /app
-
-DEFAULT_PORT=3306
-
-escape_sed() {
-  echo "$1" | sed -e 's/[\/&]/\\&/g'
-}
-sed -i "s/^DB_CONNECTION=.*/DB_CONNECTION=$(escape_sed "${DB_CONNECTION:-mysql}")/" .env
-sed -i "s/^DB_HOST=.*/DB_HOST=$(escape_sed "$DB_HOST")/" .env
-sed -i "s/^DB_PORT=.*/DB_PORT=$(escape_sed "${DB_PORT:-$DEFAULT_PORT}")/" .env
-sed -i "s/^DB_DATABASE=.*/DB_DATABASE=$(escape_sed "$DB_DATABASE")/" .env
-sed -i "s/^DB_USERNAME=.*/DB_USERNAME=$(escape_sed "$DB_USER")/" .env
-sed -i "s/^DB_PASSWORD=.*/DB_PASSWORD=$(escape_sed "$DB_PASSWORD")/" .env
 
 # Ensure storage directories exist and have proper permissions
 echo "Checking storage directories..."
@@ -544,7 +512,7 @@ if [[ "$DATABASE_URL" == postgres://* || "$DATABASE_URL" == mysql://* ]]; then
     else
       DEFAULT_PORT=3306
     fi
-    
+
     # Set these in the .env file
     sed -i "s/DB_CONNECTION=.*/DB_CONNECTION=${DB_CONNECTION}/" .env
     sed -i "s/DB_HOST=.*/DB_HOST=$DB_HOST/" .env
@@ -560,22 +528,6 @@ echo "-----> Creating pre-boot script"
 mkdir -p $BUILD_DIR/.heroku/php/etc/php/pre-boot
 cat > $BUILD_DIR/.heroku/php/etc/php/pre-boot/010-sqlite-setup.sh << 'EOF'
 #!/bin/bash
-# Setup database environment
-echo "-----> Setup database environment"
-#!/bin/bash
-
-DEFAULT_PORT=3306
-
-escape_sed() {
-  echo "$1" | sed -e 's/[\/&]/\\&/g'
-}
-sed -i "s/^DB_CONNECTION=.*/DB_CONNECTION=$(escape_sed "${DB_CONNECTION:-mysql}")/" .env
-sed -i "s/^DB_HOST=.*/DB_HOST=$(escape_sed "$DB_HOST")/" .env
-sed -i "s/^DB_PORT=.*/DB_PORT=$(escape_sed "${DB_PORT:-$DEFAULT_PORT}")/" .env
-sed -i "s/^DB_DATABASE=.*/DB_DATABASE=$(escape_sed "$DB_DATABASE")/" .env
-sed -i "s/^DB_USERNAME=.*/DB_USERNAME=$(escape_sed "$DB_USER")/" .env
-sed -i "s/^DB_PASSWORD=.*/DB_PASSWORD=$(escape_sed "$DB_PASSWORD")/" .env
-
 
 echo "Setting up SQLite database..."
 mkdir -p /app/storage/databases
@@ -610,40 +562,68 @@ cat > $BUILD_DIR/Procfile << 'EOF'
 web: bash -c "mkdir -p /app/storage/databases && touch /app/storage/databases/database.sqlite && chmod 666 /app/storage/databases/database.sqlite && chmod -R 777 /app/storage && chmod -R 777 /app/bootstrap/cache && heroku-php-apache2"
 EOF
 
-echo "-----> [Build] JAWS_DB: $JAWS_DB"
-echo "-----> [Build] DATABASE_URL: $DATABASE_URL"
-
-
 # Add this to your build script
 echo "-----> Creating database URL parser"
 mkdir -p $BUILD_DIR/.profile.d
 cat > $BUILD_DIR/.profile.d/000-parse-database-url.sh << 'EOF'
 #!/bin/bash
 
+if [ -n "$DATABASE_URL" ]; then
+  # Extract DB connection info from the DATABASE_URL
+  if [[ "$DATABASE_URL" == postgres://* || "$DATABASE_URL" == mysql://* ]]; then
+    SCHEMA=$(echo "$DATABASE_URL" | sed -E 's|://.*$||')
+
+    if [ "$SCHEMA" = "postgres" ]; then
+      DB_ENGINE_NAME="PostgreSQL"
+      DB_CONNECTION="pgsql"
+      DEFAULT_PORT=5432
+    elif [ "$SCHEMA" = "mysql" ]; then
+      DB_ENGINE_NAME="MySQL"
+      DB_CONNECTION="mysql"
+      DEFAULT_PORT=3306
+    else
+      DB_ENGINE_NAME="$SCHEMA"
+      DB_CONNECTION="sqlite"
+      DEFAULT_PORT=3306
+    fi
+
+    # Parse the DATABASE_URL
+    DB_URL=$(echo $DATABASE_URL | sed -E 's/^(postgres|mysql):\/\///')
+    DB_USER=$(echo $DB_URL | sed -e 's/:.*$//')
+    DB_PASSWORD=$(echo $DB_URL | sed -e 's/^[^:]*://' -e 's/@.*$//')
+    DB_HOST_PORT=$(echo $DB_URL | sed -e 's/^[^@]*@//' -e 's/\/.*//')
+    DB_HOST=$(echo $DB_HOST_PORT | sed -e 's/:.*$//')
+    DB_PORT=$(echo $DB_HOST_PORT | grep ":" | sed -e 's/^[^:]*://')
+    DB_DATABASE=$(echo $DB_URL | sed -e 's/^.*\///')
+    DB_PORT=${DB_PORT:-$DEFAULT_PORT}
+
+    # Set environment variables
+    export DB_CONNECTION=pgsql
+    export DB_HOST=$DB_HOST
+    export DB_PORT=${DB_PORT:-5432}
+    export DB_DATABASE=$DB_DATABASE
+    export DB_USERNAME=$DB_USER
+    export DB_PASSWORD=$DB_PASSWORD
+
+    echo "$DB_ENGINE_NAME connection configured from DATABASE_URL"
+  fi
+fi
+EOF
+
+chmod +x $BUILD_DIR/.profile.d/000-parse-database-url.sh
+
 # Add this to your build script
 echo "-----> Creating post-deploy setup script"
 mkdir -p $BUILD_DIR/.profile.d
 cat > $BUILD_DIR/.profile.d/001-dreamfactory-setup.sh << 'EOF'
 #!/bin/bash
-# Test
+
 # Wait for PostgreSQL to be ready
 echo "Waiting for PostgreSQL to be ready..."
 sleep 5
 
 # Run migrations
 cd /app
-
-DEFAULT_PORT=3306
-
-escape_sed() {
-  echo "$1" | sed -e 's/[\/&]/\\&/g'
-}
-sed -i "s/^DB_CONNECTION=.*/DB_CONNECTION=$(escape_sed "${DB_CONNECTION:-mysql}")/" .env
-sed -i "s/^DB_HOST=.*/DB_HOST=$(escape_sed "$DB_HOST")/" .env
-sed -i "s/^DB_PORT=.*/DB_PORT=$(escape_sed "${DB_PORT:-$DEFAULT_PORT}")/" .env
-sed -i "s/^DB_DATABASE=.*/DB_DATABASE=$(escape_sed "$DB_DATABASE")/" .env
-sed -i "s/^DB_USERNAME=.*/DB_USERNAME=$(escape_sed "$DB_USER")/" .env
-sed -i "s/^DB_PASSWORD=.*/DB_PASSWORD=$(escape_sed "$DB_PASSWORD")/" .env
 php artisan migrate --force
 
 # Create storage directories with proper permissions
