@@ -610,6 +610,10 @@ cat > $BUILD_DIR/Procfile << 'EOF'
 web: bash -c "mkdir -p /app/storage/databases && touch /app/storage/databases/database.sqlite && chmod 666 /app/storage/databases/database.sqlite && chmod -R 777 /app/storage && chmod -R 777 /app/bootstrap/cache && heroku-php-apache2"
 EOF
 
+echo "-----> [Build] JAWS_DB: $JAWS_DB"
+echo "-----> [Build] DATABASE_URL: $DATABASE_URL"
+
+
 # Add this to your build script
 echo "-----> Creating database URL parser"
 mkdir -p $BUILD_DIR/.profile.d

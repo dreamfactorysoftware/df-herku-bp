@@ -441,10 +441,13 @@ exec nginx -p /app -c /app/nginx/nginx.conf
 EOF
 chmod +x $BUILD_DIR/start.sh
 
-# Create Procfile if it doesn't exist
+# Create Procfile if it doesn't exists
 echo "-----> Creating Procfile"
 cat > $BUILD_DIR/Procfile << 'EOF'
 web: /app/start.sh
 EOF
+
+echo "-----> [Compile] JAWS_DB: $JAWS_DB"
+echo "-----> [Compile] DATABASE_URL: $DATABASE_URL"
 
 echo "-----> DreamFactory installation complete"
