@@ -413,7 +413,7 @@ EOF
 
 # Create the first setup script
 echo "-----> Creating setup script"
-cat > /app/df_setup.sh << 'EOF'
+cat > $BUILD_DIR/df_setup.sh << 'EOF'
 
 # Setup database environment
 if [[ "$DATABASE_URL" == postgres://* || "$DATABASE_URL" == mysql://* ]]; then
@@ -469,7 +469,7 @@ fi
 # Trigger data update manually
 php artisan cache:clear
 EOF
-chmod +x "/app/df_setup.sh"
+chmod +x "$BUILD_DIR/df_setup.sh"
 
 # Create start script
 echo "-----> Creating start script"
@@ -486,13 +486,20 @@ php-fpm -y /app/.heroku/php/etc/php-fpm.conf &
 
 # Start Nginx in foreground (to keep the container running)
 exec nginx -p /app -c /app/nginx/nginx.conf
+
+# Run DF setup script to initialize the admin user
+if [ -f /app/df_setup.sh ]; then
+  echo "-----> Running df_setup.sh"
+  source /app/df_setup.sh
+fi
 EOF
 chmod +x $BUILD_DIR/start.sh
 
 
 echo "-----> Appending DF setup call to start.sh"
 
-cat >> "/app/start.sh" <<'EOF'
+cat >> "$BUILD_DIR/start.sh" <<'EOF'
+# TEST
 # Run DF setup script to initialize the admin user
 if [ -f /app/df_setup.sh ]; then
   echo "-----> Running df_setup.sh"
