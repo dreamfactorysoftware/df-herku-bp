@@ -460,6 +460,8 @@ if [[ "$DATABASE_URL" == postgres://* || "$DATABASE_URL" == mysql://* ]]; then
     sed -i "s/#DB_USERNAME=.*/DB_USERNAME=$DB_USER/" .env
     sed -i "s/#DB_PASSWORD=.*/DB_PASSWORD=$DB_PASSWORD/" .env
 
+    export ADMIN_USERNAME=$ADMIN_USERNAME
+    export ADMIN_PASSWORD=$ADMIN_PASSWORD
     grep -q '^ADMIN_USERNAME=' .env || echo "ADMIN_USERNAME=$ADMIN_USERNAME" >> .env
     grep -q '^ADMIN_PASSWORD=' .env || echo "ADMIN_PASSWORD=$ADMIN_PASSWORD" >> .env
   fi
@@ -484,11 +486,8 @@ php-fpm -y /app/.heroku/php/etc/php-fpm.conf &
 exec nginx -p /app -c /app/nginx/nginx.conf
 
 # Run DF setup script to initialize the admin user
-if [ -f /app/df_setup.sh ]; then
-  echo "-----> Running df_setup.sh"
-  source /app/df_setup.sh
-fi
-
+ADMIN_USERNAME=$(grep '^ADMIN_USERNAME=' .env | cut -d '=' -f2-)
+ADMIN_PASSWORD=$(grep '^ADMIN_PASSWORD=' .env | cut -d '=' -f2-)
 if [[ -n "$ADMIN_USERNAME" && -n "$ADMIN_PASSWORD" ]]; then
   php artisan df:setup \
       --admin_email="$ADMIN_USERNAME" \
