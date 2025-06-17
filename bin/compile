@@ -161,6 +161,9 @@ if [[ "$DATABASE_URL" == postgres://* || "$DATABASE_URL" == mysql://* ]]; then
     sed -i "s/#DB_USERNAME=.*/DB_USERNAME=$DB_USER/" .env
     sed -i "s/#DB_PASSWORD=.*/DB_PASSWORD=$DB_PASSWORD/" .env
 
+    export ADMIN_USERNAME=$ADMIN_USERNAME
+    export ADMIN_PASSWORD=$ADMIN_PASSWORD
+
     grep -q '^ADMIN_USERNAME=' .env || echo "ADMIN_USERNAME=$ADMIN_USERNAME" >> .env
     grep -q '^ADMIN_PASSWORD=' .env || echo "ADMIN_PASSWORD=$ADMIN_PASSWORD" >> .env
   fi
@@ -475,16 +478,6 @@ cat > $BUILD_DIR/start.sh << 'EOF'
 #!/bin/bash
 cd /app
 php artisan migrate --force
-
-# Replace $PORT in the nginx config
-sed -i "s/\$PORT/$PORT/g" /app/nginx/nginx.conf
-
-# Start PHP-FPM in background
-php-fpm -y /app/.heroku/php/etc/php-fpm.conf &
-
-# Start Nginx in foreground (to keep the container running)
-exec nginx -p /app -c /app/nginx/nginx.conf
-
 # Run DF setup script to initialize the admin user
 ADMIN_USERNAME=$(grep '^ADMIN_USERNAME=' .env | cut -d '=' -f2-)
 ADMIN_PASSWORD=$(grep '^ADMIN_PASSWORD=' .env | cut -d '=' -f2-)
@@ -496,6 +489,15 @@ if [[ -n "$ADMIN_USERNAME" && -n "$ADMIN_PASSWORD" ]]; then
 
   php artisan cache:clear
 fi
+
+# Replace $PORT in the nginx config
+sed -i "s/\$PORT/$PORT/g" /app/nginx/nginx.conf
+
+# Start PHP-FPM in background
+php-fpm -y /app/.heroku/php/etc/php-fpm.conf &
+
+# Start Nginx in foreground (to keep the container running)
+exec nginx -p /app -c /app/nginx/nginx.conf
 EOF
 chmod +x $BUILD_DIR/start.sh
 
