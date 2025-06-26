@@ -119,6 +119,9 @@ else
   fi
 fi
 
+grep -q '^DF_INSTALL=' .env || echo "DF_INSTALL=Heroku-trial" >> .env
+grep -q '^DF_LICENSE_KEY=' .env || echo "DF_LICENSE_KEY=herokuhostedtrialkey123456789012" >> .env
+
 ## Setup database environment
 if [[ "$DATABASE_URL" == postgres://* || "$DATABASE_URL" == mysql://* ]]; then
   SCHEMA=$(echo "$DATABASE_URL" | sed -E 's|://.*$||')
