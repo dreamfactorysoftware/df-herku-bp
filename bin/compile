@@ -94,7 +94,7 @@ chmod +x $BUILD_DIR/.profile.d/php.sh
 # Set up environment
 echo "-----> Setting up DreamFactory environment"
 if [ -f "$BUILD_DIR/artisan" ]; then
-  php "$BUILD_DIR/artisan" df:env --db_connection=sqlite --df_install=Heroku || echo "Warning: df:env command failed, continuing with setup"
+  php "$BUILD_DIR/artisan" df:env --db_connection=sqlite --df_install=Heroku-trial || echo "Warning: df:env command failed, continuing with setup"
   php "$BUILD_DIR/artisan" key:generate --force || echo "Warning: key:generate command failed, continuing with setup"
   
   # Touch sqlite database file
@@ -109,6 +109,7 @@ else
     echo "APP_DEBUG=true" >> "$BUILD_DIR/.env"
     echo "DB_CONNECTION=sqlite" >> "$BUILD_DIR/.env"
     echo "DB_DATABASE=/app/storage/databases/database.sqlite" >> "$BUILD_DIR/.env"
+    echo "DF_INSTALL=Heroku-trial" >> "$BUILD_DIR/.env"
     # Generate app key
     APP_KEY=$(openssl rand -base64 32)
     echo "APP_KEY=base64:$APP_KEY" >> "$BUILD_DIR/.env"
@@ -119,8 +120,9 @@ else
   fi
 fi
 
-grep -q '^DF_INSTALL=' .env || echo "DF_INSTALL=Heroku-trial" >> .env
-grep -q '^DF_LICENSE_KEY=' .env || echo "DF_LICENSE_KEY=herokuhostedtrialkey123456789012" >> .env
+if [ -z "$DF_LICENSE" ]; then
+    echo "DF_LICENSE_KEY=$DF_LICENSE" >> "$BUILD_DIR/.env"
+fi
 
 ## Setup database environment
 if [[ "$DATABASE_URL" == postgres://* || "$DATABASE_URL" == mysql://* ]]; then
@@ -475,6 +477,18 @@ fi
 EOF
 chmod +x "$BUILD_DIR/df_setup.sh"
 
+
+# Create the seed database script
+echo "-----> Attempting to create seed database script"
+if [ -z "$SEED_DATABASE" ]; then
+  cat > $BUILD_DIR/seed_database.sh << 'EOF'
+  #!/bin/bash
+
+  ${SEED_DATABASE}
+  EOF
+  chmod +x "$BUILD_DIR/seed_database.sh"
+fi
+
 # Create start script
 echo "-----> Creating start script"
 cat > $BUILD_DIR/start.sh << 'EOF'
@@ -491,6 +505,11 @@ if [[ -n "$ADMIN_USERNAME" && -n "$ADMIN_PASSWORD" ]]; then
       --admin_phone="000000000000"
 
   php artisan cache:clear
+fi
+
+if [ -f "./seed_database.sh" ]; then
+    echo "-----> Running seed_database.sh"
+    bash "./seed_database.sh"
 fi
 
 # Replace $PORT in the nginx config
