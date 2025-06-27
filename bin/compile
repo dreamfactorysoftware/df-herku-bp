@@ -120,7 +120,7 @@ else
   fi
 fi
 
-if [ -z "$DF_LICENSE" ]; then
+if [ -n "$DF_LICENSE" ]; then
     echo "DF_LICENSE_KEY=$DF_LICENSE" >> "$BUILD_DIR/.env"
 fi
 
@@ -479,13 +479,16 @@ chmod +x "$BUILD_DIR/df_setup.sh"
 
 
 # Create the seed database script
-echo "-----> Attempting to create seed database script"
-if [ -z "$SEED_DATABASE" ]; then
-  cat > $BUILD_DIR/seed_database.sh << 'EOF'
-  #!/bin/bash
+if [ -n "$SEED_DATABASE" ]; then
+  cat > "$BUILD_DIR/seed_database.sh" << EOF
+#!/usr/bin/env bash
+set -e
 
-  ${SEED_DATABASE}
-  EOF
+echo "-----> Seeding database"
+${SEED_DATABASE}
+echo "-----> Database seed complete"
+EOF
+
   chmod +x "$BUILD_DIR/seed_database.sh"
 fi
 
