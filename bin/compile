@@ -91,11 +91,11 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/app/.heroku/php/lib
 EOF
 chmod +x $BUILD_DIR/.profile.d/php.sh
 
-sed -i "s/DF_INSTALL=.*/DF_INSTALL=Heroku-trial/" .env
 
 # Set up environment
 echo "-----> Setting up DreamFactory environment"
 if [ -f "$BUILD_DIR/artisan" ]; then
+  sed -i "s/DF_INSTALL=.*/DF_INSTALL=Heroku-trial/" $BUILD_DIR/.env
   php "$BUILD_DIR/artisan" df:env --db_connection=sqlite --df_install=Heroku-trial || echo "Warning: df:env command failed, continuing with setup"
   php "$BUILD_DIR/artisan" key:generate --force || echo "Warning: key:generate command failed, continuing with setup"
   
@@ -107,6 +107,7 @@ else
   echo "Warning: artisan file not found. Skipping DreamFactory environment setup."
   # Create basic .env file if it doesn't exist
   if [ ! -f "$BUILD_DIR/.env" ]; then
+    sed -i "s/DF_INSTALL=.*/DF_INSTALL=Heroku-trial/" $BUILD_DIR/.env
     echo "APP_ENV=production" > "$BUILD_DIR/.env"
     echo "APP_DEBUG=true" >> "$BUILD_DIR/.env"
     echo "DB_CONNECTION=sqlite" >> "$BUILD_DIR/.env"
