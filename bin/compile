@@ -91,20 +91,6 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/app/.heroku/php/lib
 EOF
 chmod +x $BUILD_DIR/.profile.d/php.sh
 
-# Update the install type environment
-if [ -f "$BUILD_DIR/.env" ]; then
-    # Replace uncommented DF_INSTALL
-    if grep -q '^DF_INSTALL=' "$BUILD_DIR/.env"; then
-        sed -i "s/^DF_INSTALL=.*/DF_INSTALL=Heroku-trial/" "$BUILD_DIR/.env"
-    # Replace commented DF_INSTALL
-    elif grep -q '^#DF_INSTALL=' "$BUILD_DIR/.env"; then
-        sed -i "s/^#DF_INSTALL=.*/DF_INSTALL=Heroku-trial/" "$BUILD_DIR/.env"
-    else
-        # Add it if it does not exist at all
-        echo "DF_INSTALL=Heroku-trial" >> "$BUILD_DIR/.env"
-    fi
-fi
-
 # Set up environment
 echo "-----> Setting up DreamFactory environment"
 if [ -f "$BUILD_DIR/artisan" ]; then
@@ -185,6 +171,18 @@ if [[ "$DATABASE_URL" == postgres://* || "$DATABASE_URL" == mysql://* ]]; then
     grep -q '^ADMIN_USERNAME=' .env || echo "ADMIN_USERNAME=$ADMIN_USERNAME" >> .env
     grep -q '^ADMIN_PASSWORD=' .env || echo "ADMIN_PASSWORD=$ADMIN_PASSWORD" >> .env
   fi
+fi
+
+# Update the install type environment
+if [ -f ".env" ]; then
+    echo "-----> Configuring DF_INSTALL env"
+    if grep -q '^DF_INSTALL=' ".env"; then
+        sed -i "s/^DF_INSTALL=.*/DF_INSTALL=Heroku-trial/" .env
+    elif grep -q '^#DF_INSTALL=' ".env"; then
+        sed -i "s/^#DF_INSTALL=.*/DF_INSTALL=Heroku-trial/" .env
+    else
+        echo "DF_INSTALL=Heroku-trial" >> .env
+    fi
 fi
 
 # Set appropriate permissions
