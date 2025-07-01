@@ -91,6 +91,8 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/app/.heroku/php/lib
 EOF
 chmod +x $BUILD_DIR/.profile.d/php.sh
 
+sed -i "s/DF_INSTALL=.*/DF_INSTALL=Heroku-trial/" .env
+
 # Set up environment
 echo "-----> Setting up DreamFactory environment"
 if [ -f "$BUILD_DIR/artisan" ]; then
