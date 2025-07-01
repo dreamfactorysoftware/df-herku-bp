@@ -185,6 +185,11 @@ if [ -f ".env" ]; then
     fi
 fi
 
+# Test DF_INSTALL value
+if [ -f "$BUILD_DIR/artisan" ]; then
+  echo "DF_INSTALL value: $(php "$BUILD_DIR/artisan" tinker --execute="echo env('DF_INSTALL');")"
+fi
+
 # Set appropriate permissions
 echo "-----> Setting file permissions"
 if [ -d "$BUILD_DIR/storage" ]; then
