@@ -410,7 +410,7 @@ http {
       if ($request_method = 'OPTIONS') {
         add_header 'Access-Control-Allow-Origin' '*';
         add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS';
-        add_header 'Access-Control-Allow-Headers' 'X-DreamFactory-API-Key', 'X-DreamFactory-Session-Token', Content-Type';
+        add_header 'Access-Control-Allow-Headers' 'X-DreamFactory-API-Key, X-DreamFactory-Session-Token, Content-Type';
         add_header 'Access-Control-Max-Age' 3600;
         return 204;
       }
