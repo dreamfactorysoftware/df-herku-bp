@@ -414,6 +414,8 @@ http {
         add_header 'Access-Control-Max-Age' 3600;
         return 204;
       }
+
+      try_files $uri $uri/ /index.php?$args;
     }
   }
 }
