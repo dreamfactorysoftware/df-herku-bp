@@ -392,17 +392,6 @@ http {
       deny all;
     }
 
-    # If not OPTIONS, let DreamFactory handle it try_files $uri $uri/ /index.php?$args; }
-    location ~* ^/api/v2/ {
-        if ($request_method = 'OPTIONS') {
-            add_header 'Access-Control-Allow-Origin' '*';
-            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS';
-            add_header 'Access-Control-Allow-Headers' 'X-DreamFactory-API-Key, Content-Type';
-            add_header 'Access-Control-Max-Age' 3600;
-            return 204;
-        }
-    }
-
     #By default we will limit login calls here using the limit_req_zone set above. The below will allow 1 per second over
     # 5 seconds (so 5 in 5 seconds)from a single IP before returning a 429 too many requests. Adjust as needed.
     location /api/v2/user/session {
