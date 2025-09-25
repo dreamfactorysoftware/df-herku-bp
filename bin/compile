@@ -94,7 +94,7 @@ chmod +x $BUILD_DIR/.profile.d/php.sh
 # Set up environment
 echo "-----> Setting up DreamFactory environment"
 if [ -f "$BUILD_DIR/artisan" ]; then
-  php "$BUILD_DIR/artisan" df:env --db_connection=sqlite --df_install=Heroku-trial || echo "Warning: df:env command failed, continuing with setup"
+  php "$BUILD_DIR/artisan" df:env --db_connection=sqlite --df_install=${DF_INSTALL:-Heroku-trial} || echo "Warning: df:env command failed, continuing with setup"
   php "$BUILD_DIR/artisan" key:generate --force || echo "Warning: key:generate command failed, continuing with setup"
   
   # Touch sqlite database file
@@ -176,12 +176,13 @@ fi
 # Update the install type environment
 if [ -f ".env" ]; then
     echo "-----> Configuring DF_INSTALL env"
+    INSTALL_TYPE="${DF_INSTALL:-Heroku-trial}"
     if grep -q '^DF_INSTALL=' ".env"; then
-        sed -i "s/^DF_INSTALL=.*/DF_INSTALL=Heroku-trial/" .env
+        sed -i "s/^DF_INSTALL=.*/DF_INSTALL=${INSTALL_TYPE}/" .env
     elif grep -q '^#DF_INSTALL=' ".env"; then
-        sed -i "s/^#DF_INSTALL=.*/DF_INSTALL=Heroku-trial/" .env
+        sed -i "s/^#DF_INSTALL=.*/DF_INSTALL=${INSTALL_TYPE}/" .env
     else
-        echo "DF_INSTALL=Heroku-trial" >> .env
+        echo "DF_INSTALL=${INSTALL_TYPE}" >> .env
     fi
 fi
 
