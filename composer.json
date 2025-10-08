@@ -9,6 +9,7 @@
   "type": "project",
   "license": "MIT",
   "require": {
+    "php": "^8.3",
     "ext-pdo_sqlite": "*",
     "ext-mbstring": "*"
   }

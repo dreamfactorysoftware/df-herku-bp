@@ -64,7 +64,7 @@ if [ ! -f "$BUILD_DIR/composer.json" ]; then
   cat > $BUILD_DIR/composer.json << 'EOF'
 {
   "require": {
-    "php": "^8.0",
+    "php": "^8.3",
     "ext-mbstring": "*",
     "ext-pdo_sqlite": "*"
   }
