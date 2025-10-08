@@ -82,6 +82,14 @@ fi
 echo "-----> Installing Composer dependencies"
 composer install --no-dev --ignore-platform-reqs --no-interaction
 
+# Install SQL Server PHP extensions
+echo "-----> Installing SQL Server PHP extensions"
+if [ -f "$BP_DIR/lib/phpsql.sh" ]; then
+  bash "$BP_DIR/lib/phpsql.sh"
+else
+  echo "Warning: phpsql.sh not found, skipping SQL Server extensions"
+fi
+
 # Ensure SQLite extension is enabled
 echo "-----> Ensuring SQLite PDO driver is available"
 mkdir -p $BUILD_DIR/.profile.d
