@@ -81,7 +81,7 @@ fi
 # Install SQL Server PHP extensions
 echo "-----> Installing SQL Server PHP extensions"
 if [ -f "$BP_DIR/lib/phpsql.sh" ]; then
-  bash "$BP_DIR/lib/phpsql.sh"
+  bash "$BP_DIR/lib/phpsql.sh" "$BUILD_DIR" "$BP_DIR"
 else
   echo "Warning: phpsql.sh not found, skipping SQL Server extensions"
 fi
