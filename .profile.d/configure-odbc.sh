@@ -1,43 +1,22 @@
 #!/bin/bash
 set -e
 
-# -----------------------------
-# Set library path for ODBC drivers
-# -----------------------------
-export LD_LIBRARY_PATH="$HOME/.apt/usr/lib:$LD_LIBRARY_PATH"
+# Paths where the apt buildpack installed things
+export PATH="$HOME/.apt/opt/mssql-tools/bin:$PATH"
 
-# -----------------------------
-# Detect MS ODBC version and driver .so
-# -----------------------------
-for f in $HOME/.apt/opt/microsoft/*; do
-    MS_ODBC_VERSION=$(basename "$f" | grep -oE '[0-9]+')
-    break
-done
+# msodbcsql18 installs into this lib64 directory. Add it so PHP can find libmsodbcsql-18*.so
+export LD_LIBRARY_PATH="$HOME/.apt/opt/microsoft/msodbcsql18/lib64:${LD_LIBRARY_PATH}"
 
-for f in $HOME/.apt/usr/lib/libmsodbcsql*.so*; do
-    MS_ODBC_DRIVER_FILE=$(basename "$f")
-    break
-done
+# unixODBC driver/DSN config locations within .apt
+export ODBCSYSINI="$HOME/.apt/etc"
+export ODBCINI="$HOME/.apt/etc/odbc.ini"
 
-# -----------------------------
-# Create ODBC config files
-# -----------------------------
-export ODBCINI="$HOME/.apt/usr/lib/odbc/conf/odbc.ini"
-export ODBCSYSINI="$HOME/.apt/usr/lib/odbc/conf/odbcinst.ini"
+# Ensure driver registration file exists and points at the right .so
+mkdir -p "$HOME/.apt/etc"
 
-mkdir -p "$HOME/.apt/usr/lib/odbc/conf"
-
-cat <<EOF > $ODBCINI
-[ODBC Driver ${MS_ODBC_VERSION} for SQL Server]
-Description=Microsoft ODBC Driver ${MS_ODBC_VERSION} for SQL Server
-Driver=$HOME/.apt/usr/lib/$MS_ODBC_DRIVER_FILE
+cat > "$HOME/.apt/etc/odbcinst.ini" <<'INI'
+[ODBC Driver 18 for SQL Server]
+Description=Microsoft ODBC Driver 18 for SQL Server
+Driver=/app/.apt/opt/microsoft/msodbcsql18/lib64/libmsodbcsql-18.4.so.1.1
 UsageCount=1
-EOF
-
-cat <<EOF > $ODBCSYSINI
-[ODBC Driver ${MS_ODBC_VERSION} for SQL Server]
-Description=Microsoft ODBC Driver ${MS_ODBC_VERSION} for SQL Server
-Driver=$HOME/.apt/usr/lib/$MS_ODBC_DRIVER_FILE
-EOF
-
-echo "✅ ODBC configuration ready"
+INI
