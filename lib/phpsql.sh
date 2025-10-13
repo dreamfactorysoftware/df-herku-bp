@@ -42,24 +42,24 @@ indent() {
 BUILD_DIR=$1
 BP_DIR=$2
 
-## Get microsoft ODBC driver version
-#for f in ${BUILD_DIR}/.apt/opt/microsoft/*; do
-#	MS_ODBC_VERSION=$(echo "$(basename $f)" | grep -o -E '[0-9]+')
-#	break;
-#done
-#
-#arrow "Starting adding ODBC Driver ${MS_ODBC_VERSION} for SQL Server"
-#mkdir -p "${BUILD_DIR}/.apt/usr/lib/odbc/conf/" | indent
-#mkdir -p "${BUILD_DIR}/.apt/usr/share/resources/en_US/" | indent
-#cp -a "${BUILD_DIR}/.apt/opt/microsoft/msodbcsql${MS_ODBC_VERSION}/lib64/." "${BUILD_DIR}/.apt/usr/lib/" | indent
-#arrow "copied libmsodbcsql-${MS_ODBC_VERSION}-*"
-#cp -a "${BUILD_DIR}/.apt/opt/microsoft/msodbcsql${MS_ODBC_VERSION}/share/resources/en_US/." "${BUILD_DIR}/.apt/usr/share/resources/en_US/" | indent
-#arrow "copied msodbcsqlr${MS_ODBC_VERSION}.rll"
-#
-#mkdir -p "${BUILD_DIR}/.profile.d" | indent
-#cp "$BP_DIR/.profile.d/configure-odbc.sh" "${BUILD_DIR}/.profile.d" | indent
-#arrow "copied profile.d"
-#arrow "Finished adding ODBC Driver ${MS_ODBC_VERSION} for SQL Server"
+# Get microsoft ODBC driver version
+for f in ${BUILD_DIR}/.apt/opt/microsoft/*; do
+	MS_ODBC_VERSION=$(echo "$(basename $f)" | grep -o -E '[0-9]+')
+	break;
+done
+
+arrow "Starting adding ODBC Driver ${MS_ODBC_VERSION} for SQL Server"
+mkdir -p "${BUILD_DIR}/.apt/usr/lib/odbc/conf/" | indent
+mkdir -p "${BUILD_DIR}/.apt/usr/share/resources/en_US/" | indent
+cp -a "${BUILD_DIR}/.apt/opt/microsoft/msodbcsql${MS_ODBC_VERSION}/lib64/." "${BUILD_DIR}/.apt/usr/lib/" | indent
+arrow "copied libmsodbcsql-${MS_ODBC_VERSION}-*"
+cp -a "${BUILD_DIR}/.apt/opt/microsoft/msodbcsql${MS_ODBC_VERSION}/share/resources/en_US/." "${BUILD_DIR}/.apt/usr/share/resources/en_US/" | indent
+arrow "copied msodbcsqlr${MS_ODBC_VERSION}.rll"
+
+mkdir -p "${BUILD_DIR}/.profile.d" | indent
+cp "$BP_DIR/.profile.d/configure-odbc.sh" "${BUILD_DIR}/.profile.d" | indent
+arrow "copied profile.d"
+arrow "Finished adding ODBC Driver ${MS_ODBC_VERSION} for SQL Server"
 
 # Cleanup
 rm -f sqlsrv.tar.gz 2>/dev/null || true
