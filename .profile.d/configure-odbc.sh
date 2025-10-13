@@ -1,38 +1,43 @@
 #!/bin/bash
 set -e
 
-# Set Microsoft ODBC library path
+# -----------------------------
+# Set library path for ODBC drivers
+# -----------------------------
 export LD_LIBRARY_PATH="$HOME/.apt/usr/lib:$LD_LIBRARY_PATH"
 
-# Detect ODBC version
-for f in ${HOME}/.apt/opt/microsoft/*; do
-    MS_ODBC_VERSION=$(echo "$(basename "$f")" | grep -o -E '[0-9]+')
+# -----------------------------
+# Detect MS ODBC version and driver .so
+# -----------------------------
+for f in $HOME/.apt/opt/microsoft/*; do
+    MS_ODBC_VERSION=$(basename "$f" | grep -oE '[0-9]+')
     break
 done
 
-# Detect actual ODBC driver file
-for f in ${HOME}/.apt/usr/lib/*msodbcsql*.so*; do
+for f in $HOME/.apt/usr/lib/libmsodbcsql*.so*; do
     MS_ODBC_DRIVER_FILE=$(basename "$f")
     break
 done
 
-# Ensure config directories exist
-export ODBCINI=${HOME}/.apt/usr/lib/odbc/conf
-export ODBCSYSINI=${HOME}/.apt/usr/lib/odbc/conf
-mkdir -p "$ODBCINI"
-
+# -----------------------------
 # Create ODBC config files
-cat <<EOF > ${ODBCINI}/odbc.ini
+# -----------------------------
+export ODBCINI="$HOME/.apt/usr/lib/odbc/conf/odbc.ini"
+export ODBCSYSINI="$HOME/.apt/usr/lib/odbc/conf/odbcinst.ini"
+
+mkdir -p "$HOME/.apt/usr/lib/odbc/conf"
+
+cat <<EOF > $ODBCINI
 [ODBC Driver ${MS_ODBC_VERSION} for SQL Server]
 Description=Microsoft ODBC Driver ${MS_ODBC_VERSION} for SQL Server
-Driver=$HOME/.apt/usr/lib/${MS_ODBC_DRIVER_FILE}
+Driver=$HOME/.apt/usr/lib/$MS_ODBC_DRIVER_FILE
 UsageCount=1
 EOF
 
-cat <<EOF > ${ODBCSYSINI}/odbcinst.ini
+cat <<EOF > $ODBCSYSINI
 [ODBC Driver ${MS_ODBC_VERSION} for SQL Server]
 Description=Microsoft ODBC Driver ${MS_ODBC_VERSION} for SQL Server
-Driver=$HOME/.apt/usr/lib/${MS_ODBC_DRIVER_FILE}
+Driver=$HOME/.apt/usr/lib/$MS_ODBC_DRIVER_FILE
 EOF
 
-echo "ODBC configuration generated"
+echo "✅ ODBC configuration ready"
