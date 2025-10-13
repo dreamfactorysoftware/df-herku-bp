@@ -49,9 +49,18 @@ for f in ${BUILD_DIR}/.apt/opt/microsoft/*; do
 done
 
 arrow "Starting adding ODBC Driver ${MS_ODBC_VERSION} for SQL Server"
+mkdir -p "${BUILD_DIR}/.apt/usr/lib"
 mkdir -p "${BUILD_DIR}/.apt/usr/lib/odbc/conf/" | indent
 mkdir -p "${BUILD_DIR}/.apt/usr/share/resources/en_US/" | indent
-cp -a "${BUILD_DIR}/.apt/opt/microsoft/msodbcsql${MS_ODBC_VERSION}/lib64/." "${BUILD_DIR}/.apt/usr/lib/" | indent
+
+# Copy real ODBC libraries
+for lib in "${BUILD_DIR}/.apt/opt/microsoft/msodbcsql${MS_ODBC_VERSION}/lib64/"*.so*; do
+    cp -L "$lib" "${BUILD_DIR}/.apt/usr/lib/" | indent
+done
+
+# Create short symlink for sqlsrv.so to find
+cd "${BUILD_DIR}/.apt/usr/lib"
+ln -sf libmsodbcsql-${MS_ODBC_VERSION}.so.1.1 libmsodbcsql-${MS_ODBC_VERSION}.so
 arrow "copied libmsodbcsql-${MS_ODBC_VERSION}-*"
 cp -a "${BUILD_DIR}/.apt/opt/microsoft/msodbcsql${MS_ODBC_VERSION}/share/resources/en_US/." "${BUILD_DIR}/.apt/usr/share/resources/en_US/" | indent
 arrow "copied msodbcsqlr${MS_ODBC_VERSION}.rll"
