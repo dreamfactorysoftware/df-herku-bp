@@ -86,18 +86,45 @@ else
   echo "Warning: phpsql.sh not found, skipping SQL Server extensions"
 fi
 
+echo "-----> Ensuring SQL PDO driver is available"
+mkdir -p $BUILD_DIR/.profile.d
+cat >> $BUILD_DIR/.profile.d/php-odbc.sh << 'EOF'
+## Enable PDO SQLite
+set -e
+
+# Paths where the apt buildpack installed things
+export PATH="$HOME/.apt/opt/mssql-tools/bin:$PATH"
+
+# msodbcsql18 installs into this lib64 directory. Add it so PHP can find libmsodbcsql-18*.so
+export LD_LIBRARY_PATH="$HOME/.apt/opt/microsoft/msodbcsql18/lib64:${LD_LIBRARY_PATH}"
+
+# unixODBC driver/DSN config locations within .apt
+export ODBCSYSINI="$HOME/.apt/etc"
+export ODBCINI="$HOME/.apt/etc/odbc.ini"
+
+# Ensure driver registration file exists and points at the right .so
+mkdir -p "$HOME/.apt/etc"
+
+cat > "$HOME/.apt/etc/odbcinst.ini" <<'INI'
+[ODBC Driver 18 for SQL Server]
+Description=Microsoft ODBC Driver 18 for SQL Server
+Driver=/app/.apt/opt/microsoft/msodbcsql18/lib64/libmsodbcsql-18.4.so.1.1
+UsageCount=1
+EOF
+chmod +x $BUILD_DIR/.profile.d/php-odbc.sh
+
 # Install composer dependencies
 echo "-----> Installing Composer dependencies"
 composer install --no-dev --ignore-platform-reqs --no-interaction
 
-# Ensure SQLite extension is enabled
-echo "-----> Ensuring SQLite PDO driver is available"
-mkdir -p $BUILD_DIR/.profile.d
-cat >> $BUILD_DIR/.profile.d/php.sh << 'EOF'
-# Enable PDO SQLite
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/app/.heroku/php/lib
-EOF
-chmod +x $BUILD_DIR/.profile.d/php.sh
+## Ensure SQLite extension is enabled
+#echo "-----> Ensuring SQLite PDO driver is available"
+#mkdir -p $BUILD_DIR/.profile.d
+#cat >> $BUILD_DIR/.profile.d/php.sh << 'EOF'
+## Enable PDO SQLite
+#export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/app/.heroku/php/lib
+#EOF
+#chmod +x $BUILD_DIR/.profile.d/php.sh
 
 # Set up environment
 echo "-----> Setting up DreamFactory environment"
@@ -528,14 +555,6 @@ fi
 echo "-----> Creating start script"
 cat > $BUILD_DIR/start.sh << 'EOF'
 #!/bin/bash
-
-# Load Heroku profile.d scripts so ODBC paths/env are available
-if [ -d "/app/.profile.d" ]; then
-  for f in /app/.profile.d/*.sh; do
-    [ -r "$f" ] && . "$f"
-  done
-fi
-
 cd /app
 php artisan migrate --force
 # Run DF setup script to initialize the admin user
