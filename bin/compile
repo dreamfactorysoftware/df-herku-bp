@@ -528,6 +528,14 @@ fi
 echo "-----> Creating start script"
 cat > $BUILD_DIR/start.sh << 'EOF'
 #!/bin/bash
+
+# Load Heroku profile.d scripts so ODBC paths/env are available
+if [ -d "/app/.profile.d" ]; then
+  for f in /app/.profile.d/*.sh; do
+    [ -r "$f" ] && . "$f"
+  done
+fi
+
 cd /app
 php artisan migrate --force
 # Run DF setup script to initialize the admin user
