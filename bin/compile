@@ -64,7 +64,7 @@ if [ ! -f "$BUILD_DIR/composer.json" ]; then
   cat > $BUILD_DIR/composer.json << 'EOF'
 {
   "require": {
-    "php": "^8.0",
+    "php": "8.3.*",
     "ext-mbstring": "*",
     "ext-pdo_sqlite": "*"
   }
@@ -78,18 +78,53 @@ else
   mv $TMP_FILE $BUILD_DIR/composer.json
 fi
 
+# Install SQL Server PHP extensions
+echo "-----> Installing SQL Server PHP extensions"
+if [ -f "$BP_DIR/lib/phpsql.sh" ]; then
+  bash "$BP_DIR/lib/phpsql.sh" "$BUILD_DIR" "$BP_DIR"
+else
+  echo "Warning: phpsql.sh not found, skipping SQL Server extensions"
+fi
+
+echo "-----> Ensuring SQL PDO driver is available"
+mkdir -p $BUILD_DIR/.profile.d
+cat >> $BUILD_DIR/.profile.d/php-odbc.sh << 'EOF'
+## Enable PDO SQLite
+set -e
+
+# Paths where the apt buildpack installed things
+export PATH="$HOME/.apt/opt/mssql-tools/bin:$PATH"
+
+# msodbcsql18 installs into this lib64 directory. Add it so PHP can find libmsodbcsql-18*.so
+export LD_LIBRARY_PATH="$HOME/.apt/opt/microsoft/msodbcsql18/lib64:${LD_LIBRARY_PATH}"
+
+# unixODBC driver/DSN config locations within .apt
+export ODBCSYSINI="$HOME/.apt/etc"
+export ODBCINI="$HOME/.apt/etc/odbc.ini"
+
+# Ensure driver registration file exists and points at the right .so
+mkdir -p "$HOME/.apt/etc"
+
+cat > "$HOME/.apt/etc/odbcinst.ini" <<'INI'
+[ODBC Driver 18 for SQL Server]
+Description=Microsoft ODBC Driver 18 for SQL Server
+Driver=/app/.apt/opt/microsoft/msodbcsql18/lib64/libmsodbcsql-18.4.so.1.1
+UsageCount=1
+EOF
+chmod +x $BUILD_DIR/.profile.d/php-odbc.sh
+
 # Install composer dependencies
 echo "-----> Installing Composer dependencies"
 composer install --no-dev --ignore-platform-reqs --no-interaction
 
-# Ensure SQLite extension is enabled
-echo "-----> Ensuring SQLite PDO driver is available"
-mkdir -p $BUILD_DIR/.profile.d
-cat >> $BUILD_DIR/.profile.d/php.sh << 'EOF'
-# Enable PDO SQLite
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/app/.heroku/php/lib
-EOF
-chmod +x $BUILD_DIR/.profile.d/php.sh
+## Ensure SQLite extension is enabled
+#echo "-----> Ensuring SQLite PDO driver is available"
+#mkdir -p $BUILD_DIR/.profile.d
+#cat >> $BUILD_DIR/.profile.d/php.sh << 'EOF'
+## Enable PDO SQLite
+#export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/app/.heroku/php/lib
+#EOF
+#chmod +x $BUILD_DIR/.profile.d/php.sh
 
 # Set up environment
 echo "-----> Setting up DreamFactory environment"
@@ -444,6 +479,9 @@ pm.max_children = 5
 pm.start_servers = 2
 pm.min_spare_servers = 1
 pm.max_spare_servers = 3
+
+; --- ODBC visibility: KEEP and PASS env to workers ---
+clear_env = no
 EOF
 
 # Create the first setup script
