@@ -158,6 +158,10 @@ if [ -f "$BUILD_DIR/artisan" ]; then
   php "$BUILD_DIR/artisan" df:env --db_connection=sqlite --df_install=Heroku-trial || echo "Warning: df:env command failed, continuing with setup"
   php "$BUILD_DIR/artisan" key:generate --force || echo "Warning: key:generate command failed, continuing with setup"
 
+  if [ ! -f "$BUILD_DIR/.env" ]; then
+    echo "DF_IS_TRIAL=true" >> "$BUILD_DIR/.env"
+  fi
+
   # Touch sqlite database file
   mkdir -p "$BUILD_DIR/storage/databases"
   touch "$BUILD_DIR/storage/databases/database.sqlite"
@@ -171,6 +175,7 @@ else
     echo "DB_CONNECTION=sqlite" >> "$BUILD_DIR/.env"
     echo "DB_DATABASE=/app/storage/databases/database.sqlite" >> "$BUILD_DIR/.env"
     echo "DF_INSTALL=Heroku-trial" >> "$BUILD_DIR/.env"
+    echo "DF_IS_TRIAL=true" >> "$BUILD_DIR/.env"
     # Generate app key
     APP_KEY=$(openssl rand -base64 32)
     echo "APP_KEY=base64:$APP_KEY" >> "$BUILD_DIR/.env"
