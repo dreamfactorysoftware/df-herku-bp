@@ -153,8 +153,8 @@ else
   fi
 fi
 
-if [ -n "$DF_LICENSE" ]; then
-    echo "DF_LICENSE_KEY=$DF_LICENSE" >> "$BUILD_DIR/.env"
+if [ -n "$DF_LICENSE_KEY" ]; then
+    echo "DF_LICENSE_KEY=$DF_LICENSE_KEY" >> "$BUILD_DIR/.env"
 fi
 
 ## Setup database environment
