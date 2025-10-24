@@ -45,7 +45,16 @@ fi
 
 # Clone the repository into a temporary directory and then copy files
 TMP_DIR=$(mktemp -d)
-git clone https://github.com/dreamfactorysoftware/dreamfactory.git $TMP_DIR
+
+# Clone specific release if DF_TAG is set, otherwise clone default branch
+if [ -n "$DF_TAG" ]; then
+  echo "Cloning dreamfactory specific release: $DF_TAG"
+  git clone --depth 1 --branch $DF_TAG https://github.com/dreamfactorysoftware/dreamfactory.git $TMP_DIR
+else
+  echo "Cloning dreamfactory (default branch)"
+  git clone https://github.com/dreamfactorysoftware/dreamfactory.git $TMP_DIR
+fi
+
 # Copy everything from the temp directory to build directory
 cp -R $TMP_DIR/* $BUILD_DIR/
 cp -R $TMP_DIR/.[!.]* $BUILD_DIR/ 2>/dev/null || true
